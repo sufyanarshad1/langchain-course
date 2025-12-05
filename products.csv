@@ -1,0 +1,11 @@
+Product_ID,Product_Name,Category,Price,Stock_Quantity
+101,Laptop,Electronics,999.99,50
+102,Mouse,Electronics,25.5,200
+103,Desk Chair,Furniture,150.0,15
+104,Coffee Table,Furniture,89.99,10
+105,Headphones,Electronics,199.99,75
+106,Notebook,Stationery,5.0,500
+107,Pen Set,Stationery,12.99,100
+108,Monitor,Electronics,250.0,40
+109,Bookshelf,Furniture,120.0,20
+110,Stapler,Stationery,7.5,150

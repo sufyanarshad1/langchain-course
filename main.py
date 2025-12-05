@@ -1,8 +1,9 @@
 from dotenv import load_dotenv
 from langsmith import Client
 from langchain_ollama import ChatOllama
-from langchain_classic.agents import create_react_agent, AgentExecutor, create_csv_agent
+from langchain_classic.agents import create_react_agent, AgentExecutor
 from langchain_experimental.tools import PythonREPLTool 
+from langchain_experimental.agents import create_csv_agent
 
 load_dotenv()
 
@@ -54,17 +55,22 @@ def main():
     
     print("\n--- Invoking Agent Executor ---\n")
     
-    agent_executor.invoke(
-        input={
-            "input": """Generate 15 QRcodes pointing to www.udemy.com/course/langchain. Name them qrcode_1.png to qrcode_15.png."""
-        }
-    )
+    # agent_executor.invoke(
+    #     input={
+    #         "input": """Generate 15 QRcodes pointing to www.udemy.com/course/langchain. Name them qrcode_1.png to qrcode_15.png."""
+    #     }
+    # )
 
     csv_agent = create_csv_agent(
         llm=ChatOllama(model="llama3.2", temperature=0),
-        csv_file_path="data/sales_data.csv",
-        verbose=True
+        path="products.csv",
+        verbose=True,
+        allow_dangerous_code = True,
+        handle_parsing_errors=True,
     )
-
+    
+    csv_agent.invoke(
+        input="What is the total profit percentage for all products combined?.If you do not have the necessary information, simply say that this information is not available."
+    )
 if __name__ == "__main__":
     main()
