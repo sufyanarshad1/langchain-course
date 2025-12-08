@@ -1,18 +1,19 @@
 import datetime
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputToolsParser,
-    PydanticToolsParser
+    PydanticToolsParser,
 )
 
 from langchain_core.messages import HumanMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_ollama import ChatOllama
 
-from schemas import AnswerQuestion, ReviseAnswer 
+from schemas import AnswerQuestion, ReviseAnswer
 
 llm = ChatOllama(model="llama3.2", temperature=0)
 parser = JsonOutputToolsParser(return_id=True)
@@ -20,23 +21,23 @@ parser_pydantic = PydanticToolsParser(tools=[AnswerQuestion])
 
 actor_prompt_template = ChatPromptTemplate.from_messages(
     [
-      (  
-          "system",
+        (
+            "system",
             """You are expert researcher.
             current time: {time}
 
             1. {first_instruction}
             2. Reflect and critique your answer. Be severe to maximize the improvement.
-            3. Recommend search queries to research information and improve your answer"""
+            3. Recommend search queries to research information and improve your answer""",
         ),
-        MessagesPlaceholder(variable_name="messages")
+        MessagesPlaceholder(variable_name="messages"),
     ]
 ).partial(
-    time = lambda: datetime.datetime.now().isoformat(),
+    time=lambda: datetime.datetime.now().isoformat(),
 )
 
 first_responder_prompt_template = actor_prompt_template.partial(
-    first_instruction = "Provide a detailed 250 word answer."
+    first_instruction="Provide a detailed 250 word answer."
 )
 
 first_responder = first_responder_prompt_template | llm.bind_tools(
@@ -53,7 +54,7 @@ revise_instructions = """Revise your previous answer using the new information.
 """
 
 revisor = actor_prompt_template.partial(
-    first_instruction = revise_instructions
+    first_instruction=revise_instructions
 ) | llm.bind_tools(tools=[ReviseAnswer], tool_choice="ReviseAnswer")
 
 if __name__ == "__main__":
@@ -61,18 +62,17 @@ if __name__ == "__main__":
         content="Write about AI-Powered SOC / autonomous soc problem domain,"
         "list startups that do that and raised capital."
     )
-    
+
     # First, let's see the raw output
-    raw_chain = (
-        first_responder_prompt_template
-        | llm.bind_tools(tools=[AnswerQuestion], tool_choice="AnswerQuestion")
+    raw_chain = first_responder_prompt_template | llm.bind_tools(
+        tools=[AnswerQuestion], tool_choice="AnswerQuestion"
     )
-    
+
     print("=== RAW OUTPUT ===")
     raw_res = raw_chain.invoke(input={"messages": [human_message]})
     print(raw_res)
     print("\n=== PARSED OUTPUT ===")
-    
+
     # Now with parser
     chain = (
         first_responder_prompt_template
@@ -82,13 +82,16 @@ if __name__ == "__main__":
 
     res = chain.invoke(input={"messages": [human_message]})
     print(res)
-    
+
     # Pretty print the first result
     if res:
-        print("\n" + "="*80)
+        print("\n" + "=" * 80)
         print("FORMATTED OUTPUT")
-        print("="*80)
+        print("=" * 80)
         result = res[0]
         print(f"\n📝 ANSWER:\n{result.answer}")
         print(f"\n🔍 REFLECTION:\n{result.reflection}")
-        print(f"\n🔎 SEARCH QUERIES:\n" + "\n".join(f"  - {q}" for q in result.search_queries))
+        print(
+            f"\n🔎 SEARCH QUERIES:\n"
+            + "\n".join(f"  - {q}" for q in result.search_queries)
+        )
