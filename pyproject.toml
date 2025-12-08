@@ -9,6 +9,7 @@ dependencies = [
     "isort>=7.0.0",
     "langchain>=1.1.2",
     "langchain-classic>=1.0.0",
+    "langchain-core>=1.0.0",
     "langchain-ollama>=1.0.0",
     "langchain-tavily>=0.2.13",
     "langgraph>=1.0.4",
