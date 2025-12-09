@@ -2,6 +2,8 @@ from dotenv import load_dotenv
 
 from langgraph.graph import END, StateGraph
 
+from graph.chains.answer_grader import answer_grader
+from graph.chains.hallucination_grader import hallucination_grader
 from graph.consts import RETRIEVE, GENERATE, GRADE_DOCUMENTS, WEB_SEARCH
 from graph.nodes import retrieve, generate, grade_documents, web_search
 from graph.state import GraphState
@@ -19,6 +21,38 @@ def decide_to_generate(state):
         print("Decision: All documents are relevant, proceeding to generate.")
         return GENERATE
     
+def grade_generation_grounded_in_documents_and_question(state: GraphState)->str:
+    print("---Check Hallucinations---")
+    question = state["question"]
+    documents = state["documents"]
+    generation = state["generation"]
+
+    score = hallucination_grader.invoke(
+        {
+            "documents": documents,
+            "generation": generation
+        }
+    )
+
+    if hallucination_grade := score.binary_score:
+        print("---Decision: Generation is grounded in documents---")
+        print("---Grade Generation vs Question---")
+        score = answer_grader.invoke(
+            {
+                "generation": generation,
+                "question": question
+            }
+        )
+        if answer_grade := score.binary_score:
+            print("---Decision: Generation Addresses Question---")
+            return "useful"
+        else:
+            print("---Decision: Generation Does Not Address Question---")
+            return "not useful"
+    else:
+        print("---Decision: Generation is not grounded in documents---")
+        return "not supported"
+    
 workflow = StateGraph(GraphState)
 
 workflow.add_node(RETRIEVE, retrieve)
@@ -34,6 +68,15 @@ workflow.add_conditional_edges(
     {
         WEB_SEARCH: WEB_SEARCH,
         GENERATE: GENERATE
+    },
+)
+workflow.add_conditional_edges(
+    GENERATE,
+    grade_generation_grounded_in_documents_and_question,
+    {
+        "useful": END,
+        "not useful": WEB_SEARCH,
+        "not supported": GENERATE
     },
 )
 workflow.add_edge(WEB_SEARCH, END)
