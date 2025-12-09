@@ -4,7 +4,7 @@ from graph.state import GraphState
 from ingestion import retriever
 
 
-def rerieve(state: GraphState) -> Dict[str, Any]:
+def retrieve(state: GraphState) -> Dict[str, Any]:
     """Retrieve documents based on the question in the graph state.
 
     Args:
@@ -14,4 +14,4 @@ def rerieve(state: GraphState) -> Dict[str, Any]:
     question = state["question"]
 
     document = retriever.invoke(question)
-    return {"docuements": document, "question": question}
+    return {"documents": document, "question": question}
